@@ -4,17 +4,21 @@ import re
 
 file_path = "15.01 Tr. 6 Export for Patryk Kusztal 45648.csv"
 
-# Wyciągnięcie imienia i nazwiska z nazwy pliku
-match = re.search(r"for (\w+) (\w+)", file_path)
-if match:
-    first_name, last_name = match.groups()
-    output_file = f'wyniki_{first_name}_{last_name}.xlsx'
-else:
-    output_file = 'wyniki.xlsx'
-
-# Ponownie wczytam plik, analizując jego zawartość, aby znaleźć odpowiedni wiersz nagłówków
+# Pobranie imienia i nazwiska z sekcji # Athlete
 with open(file_path, 'r', encoding='utf-8') as file:
     lines = file.readlines()
+
+
+athlete_line = next((line for line in lines if "# Athlete" in line), None)
+if athlete_line:
+    match = re.search(r'"(\w+)"', athlete_line)
+    if match:
+        athlete_name = match.group(1)
+    else:
+        athlete_name = 'Unknown'
+else:
+    athlete_name = 'Unknown'
+
 
 # Znalezienie wiersza nagłówka (pierwszy wiersz zawierający "Velocity" jako kolumnę)
 header_line = next(i for i, line in enumerate(lines) if "Velocity" in line)
@@ -47,11 +51,13 @@ plt.show()
 # Tworzenie wykresu
 plt.figure(figsize=(12, 6))  # Zwiększenie rozmiaru wykresu
 
+plt.savefig(f'Acceleration_{athlete_name}.png')
+plt.close()
 
 df=df[df['Velocity']>5]
 # Dodanie średniej kroczącej dla wygładzenia wykresu (rolling window = 20) - żeby było lepiej widać
 df['Acceleration_Smooth'] = df['Acceleration'].rolling(window=20, min_periods=1).mean()
-plt.plot(df['Seconds'], df['Acceleration'], label='Smoothed Acceleration', color='red', linewidth=1.5)
+plt.plot(df['Seconds'], df['Acceleration'], label='Smoothed Acceleration (Velocity>5)', color='red', linewidth=1.5)
 
 # Opisy osi i tytuł
 plt.xlabel('Czas (s)')
@@ -66,3 +72,6 @@ plt.legend()
 
 # Wyświetlenie wykresu
 plt.show()
+
+plt.savefig(f'Acceleration_VelocityAbove5_{athlete_name}.png')
+plt.close()

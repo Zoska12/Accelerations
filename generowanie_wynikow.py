@@ -32,9 +32,12 @@ def compute_future_mean(series, window=7):
 
 df['Acceleration_SMA'] = compute_future_mean(df['Acceleration'], window=7)
 
-# Definicja dwóch przedziałów prędkości
-bins = [0, 5, df['Velocity'].max() + 1]
-labels = ['0-5', '5+']
+# Definiowanie dynamicznych przedziałów co 5 jednostek
+max_velocity = df['Velocity'].max()  # Pobranie maksymalnej wartości
+bins = list(range(0, int(max_velocity) + 6, 5))  # Tworzenie przedziałów co 5
+labels = [f"{bins[i]}-{bins[i+1]}" for i in range(len(bins)-1)]  # Generowanie etykiet
+
+# Przypisanie wartości do przedziałów
 df['Velocity_Bin'] = pd.cut(df['Velocity'], bins=bins, labels=labels, right=False)
 
 # Znalezienie wszystkich wartości przyspieszenia dla każdej grupy z warunkiem minimalnej odległości 1s
