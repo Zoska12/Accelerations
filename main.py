@@ -79,6 +79,7 @@ if not csv_files:
     print("Brak plików CSV w podanym folderze.")
     exit()
 
+all_results = []
 # Iteracja po wszystkich plikach CSV i przetwarzanie ich
 for file_number, file in enumerate(csv_files, start=1):
     file_path = os.path.join(folder_path, file)
@@ -93,7 +94,25 @@ for file_number, file in enumerate(csv_files, start=1):
     # Przetwórz plik do DataFrame
     df_processed = process_data(file_path, lines)
 
+        # Grupowanie i obliczanie średnich
+    df_grouped = (
+        df_processed.groupby('Velocity_Bin')
+        .agg({'Acceleration_SMA': 'mean'})
+        .reset_index()
+    )
+
+    # Dodanie wyniku do listy
+    all_results.append(df_grouped)
+
     # Zapisz wynik do Excela w folderze "wyniki"
     save_to_excel(df_processed, athlete_name, file_number, output_folder)
 
+# Łączenie wszystkich wyników w jeden DataFrame
+final_df = pd.concat(all_results, ignore_index=True)
+final_df=final_df.groupby('Velocity_Bin')['Acceleration_SMA'].mean().reset_index()
+# Wyświetlenie lub zapisanie wynikowego DataFrame
+
+output_file = os.path.join(output_folder, f'wyniki_średnie.xlsx')
+final_df.to_excel(output_file, index=False)
+# final_df.to_csv('path_to_save.csv', index=False)
 print("Przetwarzanie wszystkich plików zakończone.")
