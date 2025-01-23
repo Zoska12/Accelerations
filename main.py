@@ -15,6 +15,23 @@ def extract_athlete_name(lines):
         return match.group(1) if match else "Unknown"
     return "Unknown"
 
+def extract_athlete_name(lines):
+        # Odczytanie daty eksportu (pierwszy wiersz) i usunięcie godziny
+    # Odczytanie nazwy atlety (siódmy wiersz) i usunięcie zbędnych średników
+    athlete_name = lines[7].split(":")[1].strip().replace('"', '').split(";")[0]
+    if athlete_name:
+        return athlete_name
+    return "Unknown_name"
+
+
+def extract_date(lines):
+         # Odczytanie daty eksportu (pierwszy wiersz) i usunięcie godziny
+    export_date = " ".join(lines[0].split(":")[1].strip().split()[:1])  # Pobiera tylko część z datą
+    if export_date:
+        return export_date
+    return "Unknown_date"
+
+
 def process_data(file_path, lines):
     """ Przetwarza dane z pliku CSV, oblicza średnie przyspieszenie i przedziały prędkości. """
     header_line = next(i for i, line in enumerate(lines) if "Velocity" in line)
@@ -53,10 +70,10 @@ def process_data(file_path, lines):
         .reset_index(drop=True)[['Timestamp', 'Seconds', 'Velocity', 'Acceleration_SMA', 'Velocity_Bin']]
     )
 
-def save_to_excel(df, athlete_name, file_number, output_folder):
+def save_to_excel(df, athlete_name, date, file_number, output_folder):
     """ Zapisuje DataFrame do pliku XLSX w podanym folderze. """
     os.makedirs(output_folder, exist_ok=True)  # Tworzy folder, jeśli nie istnieje
-    output_file = os.path.join(output_folder, f'wyniki_{athlete_name}_{file_number}.xlsx')
+    output_file = os.path.join(output_folder, f'wyniki_{athlete_name}_{date}_{file_number}.xlsx')
     df.to_excel(output_file, index=False)
     print(f"Zapisano plik: {output_file}")
 
@@ -90,7 +107,7 @@ for file_number, file in enumerate(csv_files, start=1):
 
     # Pobierz imię zawodnika
     athlete_name = extract_athlete_name(lines)
-
+    date = extract_date(lines)
     # Przetwórz plik do DataFrame
     df_processed = process_data(file_path, lines)
 
@@ -105,12 +122,12 @@ for file_number, file in enumerate(csv_files, start=1):
     all_results.append(df_grouped)
 
     # Zapisz wynik do Excela w folderze "wyniki"
-    save_to_excel(df_processed, athlete_name, file_number, output_folder)
+    save_to_excel(df_processed, athlete_name,date, file_number, output_folder)
 
 # Łączenie wszystkich wyników w jeden DataFrame
 final_df = pd.concat(all_results, ignore_index=True)
 final_df=final_df.groupby('Velocity_Bin')['Acceleration_SMA'].mean().reset_index()
-# Wyświetlenie lub zapisanie wynikowego DataFrame
+# Wyświetlenie lub zapisanie wynikowego DataFrameS
 
 output_file = os.path.join(output_folder, f'wyniki_średnie.xlsx')
 final_df.to_excel(output_file, index=False)
