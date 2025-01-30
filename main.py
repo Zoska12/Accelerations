@@ -26,7 +26,7 @@ def extract_athlete_name(lines):
 
 def extract_date(lines):
          # Odczytanie daty eksportu (pierwszy wiersz) i usunięcie godziny
-    export_date = " ".join(lines[0].split(":")[1].strip().split()[:1])  # Pobiera tylko część z datą
+    export_date = " ".join(lines[1].split(":")[1].strip().split()[:1])  # Pobiera tylko część z datą
     if export_date:
         return export_date
     return "Unknown_date"
