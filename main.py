@@ -1,6 +1,7 @@
 import os
 import pandas as pd
 import re
+import numpy as np
 
 def read_file(file_path):
     """ Odczytuje zawartość pliku i zwraca listę linii. """
@@ -33,6 +34,7 @@ def extract_date(lines):
 
 
 def process_data(file_path, lines):
+
     """ Przetwarza dane z pliku CSV, oblicza średnie przyspieszenie i przedziały prędkości. """
     header_line = next(i for i, line in enumerate(lines) if "Velocity" in line)
     df = pd.read_csv(file_path, skiprows=header_line, sep=';', decimal=',')
@@ -43,22 +45,35 @@ def process_data(file_path, lines):
     df['Acceleration_SMA'] = compute_future_mean(df['Acceleration'], window=7)
 
     max_velocity = df['Velocity'].max()
-    bins = list(range(0, int(max_velocity) + 6, 5))
-    labels = [f"{bins[i]}-{bins[i+1]}" for i in range(len(bins)-1)]
+    #bins = list(range(0, int(max_velocity) + 6, 5))
+    #labels = [f"{bins[i]}-{bins[i+1]}" for i in range(len(bins)-1)]
+    bins = [5, 10, 15]  # Dwa przedziały: 5-10 i 10-15
+    labels = ["5-10", "10-15"]
     df['Velocity_Bin'] = pd.cut(df['Velocity'], bins=bins, labels=labels, right=False)
 
     def filter_by_time_gap(group):
+
+        if group.empty:
+            return pd.DataFrame({
+                'Timestamp': [np.nan], 
+                'Seconds': [np.nan], 
+                'Velocity': [np.nan], 
+                'Acceleration_SMA': [np.nan], 
+                'Velocity_Bin': [group.name]  # Przypisanie pustej grupy do Velocity_Bin
+            })
         selected = []
-        top_n = 10
-        while len(selected) < 10:
+        #top_n = 10
+        top_n = 3
+        while len(selected) < 3:
             candidates = group.nlargest(top_n, 'Acceleration_SMA')  
             selected = []
             for _, row in candidates.iterrows():
                 if not selected or all(abs(row['Seconds'] - prev['Seconds']) >= 1 for prev in selected):
                     selected.append(row)
-                if len(selected) == 10:
+                if len(selected) == 3:
                     break
-            top_n += 5  
+            #top_n += 5
+            top_n += 3  
             if top_n > len(group):
                 break
         return pd.DataFrame(selected)
@@ -69,6 +84,7 @@ def process_data(file_path, lines):
         .sort_values(by=['Velocity_Bin', 'Seconds'])
         .reset_index(drop=True)[['Timestamp', 'Seconds', 'Velocity', 'Acceleration_SMA', 'Velocity_Bin']]
     )
+
 
 def save_to_excel(df, athlete_name, date, file_number, output_folder):
     """ Zapisuje DataFrame do pliku XLSX w podanym folderze. """
