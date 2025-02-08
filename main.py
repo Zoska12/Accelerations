@@ -89,6 +89,7 @@ def process_data(file_path, lines):
 def save_to_excel(df, athlete_name, date, file_number, output_folder):
     """ Zapisuje DataFrame do pliku XLSX w podanym folderze. """
     os.makedirs(output_folder, exist_ok=True)  # Tworzy folder, jeśli nie istnieje
+    df['Timestamp'] = df['Timestamp'].fillna(date)
     output_file = os.path.join(output_folder, f'wyniki_{athlete_name}_{date}_{file_number}.xlsx')
     df.to_excel(output_file, index=False)
     print(f"Zapisano plik: {output_file}")
